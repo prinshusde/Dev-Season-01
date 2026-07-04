@@ -1,8 +1,8 @@
 console.log("Sum module")
 
-let a = 10
+ let a = 10
 
-function sum(a,b){
+ function sum(a,b){
    console.log("Sum is: ",a+b)
 } 
 
