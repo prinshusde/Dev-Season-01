@@ -1,5 +1,5 @@
 require("./abc.js")
-const {sum,a }= require("./sum.js")
+const {sum,a }= require("./sum")
 
 sum(10,5)
 
