@@ -1,0 +1,139 @@
+
+
+
+In node.js, agar main thread block hai our our event loop ke pass kuchh async function execute hone ke liye gaye hai
+
+Haan. Ye Node.js ka bahut important concept hai. Chaliye step by step samajhte hain.
+
+Maan lo ye code hai:
+
+const fs = require("fs");
+
+console.log("Start");
+
+fs.readFile("test.txt", "utf8", (err, data) => {
+  console.log("File Read");
+});
+
+console.log("Blocking starts");
+
+// Main thread ko 5 seconds ke liye block kar diya
+const start = Date.now();
+while (Date.now() - start < 5000) {}
+
+console.log("Blocking ends");
+Execution Flow
+Step 1
+console.log("Start");
+Output:
+
+Start
+Step 2
+fs.readFile(...)
+fs.readFile() asynchronous hai.
+
+Node.js request ko libuv ya OS ko de deta hai.
+
+Main thread wait nahi karta.
+
+Callback abhi execute nahi hota.
+
+Step 3
+console.log("Blocking starts");
+Output:
+
+Blocking starts
+Step 4
+while (...) {}
+Ab problem shuru hoti hai.
+
+Ye loop 5 seconds tak main thread ko completely busy rakhta hai.
+
+Is duration me:
+
+File read background me complete ho sakti hai.
+
+Callback Event Queue me aa sakta hai.
+
+Lekin Event Loop callback ko execute nahi kara sakta, kyunki JavaScript thread abhi bhi while loop me busy hai.
+
+Yaani:
+
+Background Thread
+       │
+       ▼
+File Read Complete
+       │
+       ▼
+Event Queue
+       │
+       ▼
+❌ Event Loop wait kar raha hai
+       │
+       ▼
+Main Thread busy hai
+Step 5
+5 seconds baad:
+
+console.log("Blocking ends");
+Output:
+
+Blocking ends
+Ab call stack empty ho gayi.
+
+Ab Event Loop finally queue check karega.
+
+Queue me callback already pada hua hai.
+
+console.log("File Read");
+Output:
+
+File Read
+Final Output
+Start
+Blocking starts
+Blocking ends
+File Read
+To answer your question directly:
+"Agar main thread block hai aur event loop ke paas kuch async function execute hone ke liye aa gaye hain to kya hoga?"
+
+Answer:
+
+Async operation (jaise fs.readFile, network request, timer) background me complete ho sakti hai.
+
+Uska callback Event Queue me aa jayega.
+
+Lekin jab tak main thread (call stack) busy hai, Event Loop callback ko execute nahi kar sakta.
+
+Jaise hi call stack empty hoti hai, Event Loop queue se callback uthakar execute kar deta hai.
+
+Ek analogy
+Socho:
+
+👨‍🍳 JavaScript thread = Chef
+
+📦 Event Queue = Delivery counter
+
+🚶 Event Loop = Waiter
+
+Delivery boy (background thread) pizza rakh deta hai counter par.
+
+Lekin waiter chef ko tab tak pizza nahi de sakta jab tak chef current order finish na kar le.
+
+Background Thread
+        │
+        ▼
+   Event Queue
+        │
+        ▼
+   Event Loop
+        │
+        ▼
+ Main Thread (Chef)
+        │
+        ├── Busy ❌ → Callback wait karega
+        └── Free ✅ → Callback execute hoga
+Isi wajah se kehte hain ki Node.js single-threaded JavaScript execution model use karta hai—async operations background me ho sakte hain, lekin unke callbacks hamesha main JavaScript thread par hi execute hote hain.
+
+
+
